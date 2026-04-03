@@ -6,9 +6,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 // Tambahkan keyword baru di sini:
 // "keyword": "https://linknya.com"
 const LINK_DATABASE: Record<string, string> = {
-  "naga": "https://t.ly/masuknaga",
-  "naga 138": "https://t.ly/masuknaga",
-  "naga138": "https://t.ly/masuknaga",
+  "naga": "https://t.ly/officialnaga138",
+  "naga 138": "https://t.ly/officialnaga138",
+  "naga138": "https://t.ly/officialnaga138",
+  "kampung": "https://t.ly/KAMPUNG138",
+  "kampung138": "https://t.ly/KAMPUNG138",
+  "kampung 138": "https://t.ly/KAMPUNG138",
 };
 
 // Normalize input: lowercase + trim extra spaces
