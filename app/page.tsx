@@ -2,22 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
-<<<<<<< HEAD
-// ─── Link Database ────────────────────────────────────────────────────────────
-// Tambahkan keyword baru di sini:
-// "keyword": "https://linknya.com"
-const LINK_DATABASE: Record<string, string> = {
-  "naga": "https://t.ly/officialnaga138",
-  "naga 138": "https://t.ly/officialnaga138",
-  "naga138": "https://t.ly/officialnaga138",
-  "kampung": "https://t.ly/KAMPUNG138",
-  "kampung138": "https://t.ly/KAMPUNG138",
-  "kampung 138": "https://t.ly/KAMPUNG138",
-};
-
-// Normalize input: lowercase + trim extra spaces
-=======
->>>>>>> b084764 (update)
 function normalize(str: string): string {
   return str.toLowerCase().trim().replace(/\s+/g, " ");
 }
@@ -186,49 +170,65 @@ export default function Home() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const handleSearch = useCallback(async () => {
+  const lookupAndGo = useCallback(
+    async (rawKeyword: string, { showInputShake = false } = {}) => {
+      setIsSearching(true);
+      const loadingId = addToast({ type: "loading", message: "Mencari link...", sub: `"${rawKeyword}"` });
+
+      let link: string | null = null;
+      try {
+        const res = await fetch("/api/links", { cache: "no-store" });
+        if (res.ok) {
+          const data = (await res.json()) as { links?: Record<string, string> };
+          const key = normalize(rawKeyword);
+          link = data.links?.[key] ?? null;
+        }
+      } catch {
+        link = null;
+      }
+
+      removeToast(loadingId);
+      setIsSearching(false);
+
+      if (link) {
+        addToast({
+          type: "success",
+          message: "Link ditemukan! Mengalihkan...",
+          sub: "Mengalihkan ke halaman...",
+        });
+        setTimeout(() => {
+          window.location.href = link;
+        }, 400);
+      } else {
+        if (showInputShake) {
+          setShake(true);
+          setTimeout(() => setShake(false), 500);
+        }
+        addToast({
+          type: "error",
+          message: "Link tidak ditemukan",
+          sub: `Kata kunci "${rawKeyword}" tidak tersedia`,
+        });
+      }
+    },
+    [addToast, removeToast]
+  );
+
+  const handleSearch = useCallback(() => {
     if (!query.trim()) {
       inputRef.current?.focus();
       return;
     }
+    lookupAndGo(query, { showInputShake: true });
+  }, [query, lookupAndGo]);
 
-    setIsSearching(true);
-    const loadingId = addToast({ type: "loading", message: "Mencari link...", sub: `"${query}"` });
-
-    let link: string | null = null;
-    try {
-      const res = await fetch("/api/links", { cache: "no-store" });
-      if (res.ok) {
-        const data = (await res.json()) as { links?: Record<string, string> };
-        const key = normalize(query);
-        link = data.links?.[key] ?? null;
-      }
-    } catch {
-      link = null;
-    }
-
-    removeToast(loadingId);
-    setIsSearching(false);
-
-    if (link) {
-      addToast({
-        type: "success",
-        message: "Link ditemukan! Mengalihkan...",
-        sub: "Mengalihkan ke halaman...",
-      });
-      setTimeout(() => {
-        window.location.href = link;
-      }, 400);
-    } else {
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-      addToast({
-        type: "error",
-        message: "Link tidak ditemukan",
-        sub: `Kata kunci "${query}" tidak tersedia`,
-      });
-    }
-  }, [query, addToast, removeToast]);
+  const handleQuickAccess = useCallback(
+    (keyword: string) => {
+      if (isSearching) return;
+      lookupAndGo(keyword);
+    },
+    [isSearching, lookupAndGo]
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSearch();
@@ -326,6 +326,57 @@ export default function Home() {
                   </svg>
                 </>
               )}
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Access */}
+        <div className="w-full flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-white/5" />
+            <span className="text-white/30 text-xs font-medium tracking-widest uppercase">Akses Cepat</span>
+            <div className="flex-1 h-px bg-white/5" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleQuickAccess("naga")}
+              disabled={isSearching}
+              className="group relative overflow-hidden glass rounded-2xl p-5 border border-white/10 hover:border-indigo-400/40 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-white font-bold text-base">Naga</p>
+                <p className="text-white/40 text-xs mt-0.5">Klik untuk akses langsung</p>
+              </div>
+              <svg className="w-4 h-4 text-white/30 group-hover:text-white/70 group-hover:translate-x-1 transition-all flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleQuickAccess("kampung")}
+              disabled={isSearching}
+              className="group relative overflow-hidden glass rounded-2xl p-5 border border-white/10 hover:border-cyan-400/40 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/20 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-white font-bold text-base">Kampung</p>
+                <p className="text-white/40 text-xs mt-0.5">Klik untuk akses langsung</p>
+              </div>
+              <svg className="w-4 h-4 text-white/30 group-hover:text-white/70 group-hover:translate-x-1 transition-all flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
             </button>
           </div>
         </div>
