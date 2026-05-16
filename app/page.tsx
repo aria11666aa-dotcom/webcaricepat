@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
+<<<<<<< HEAD
 // ─── Link Database ────────────────────────────────────────────────────────────
 // Tambahkan keyword baru di sini:
 // "keyword": "https://linknya.com"
@@ -15,13 +16,10 @@ const LINK_DATABASE: Record<string, string> = {
 };
 
 // Normalize input: lowercase + trim extra spaces
+=======
+>>>>>>> b084764 (update)
 function normalize(str: string): string {
   return str.toLowerCase().trim().replace(/\s+/g, " ");
-}
-
-function findLink(query: string): string | null {
-  const key = normalize(query);
-  return LINK_DATABASE[key] ?? null;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -197,10 +195,18 @@ export default function Home() {
     setIsSearching(true);
     const loadingId = addToast({ type: "loading", message: "Mencari link...", sub: `"${query}"` });
 
-    // Simulate search delay for UX
-    await new Promise((r) => setTimeout(r, 800));
+    let link: string | null = null;
+    try {
+      const res = await fetch("/api/links", { cache: "no-store" });
+      if (res.ok) {
+        const data = (await res.json()) as { links?: Record<string, string> };
+        const key = normalize(query);
+        link = data.links?.[key] ?? null;
+      }
+    } catch {
+      link = null;
+    }
 
-    const link = findLink(query);
     removeToast(loadingId);
     setIsSearching(false);
 
@@ -208,10 +214,10 @@ export default function Home() {
       addToast({
         type: "success",
         message: "Link ditemukan! Mengalihkan...",
-        sub: "Membuka di tab baru",
+        sub: "Mengalihkan ke halaman...",
       });
       setTimeout(() => {
-        window.open(link, "_blank", "noopener,noreferrer");
+        window.location.href = link;
       }, 400);
     } else {
       setShake(true);
